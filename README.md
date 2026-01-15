@@ -1,45 +1,50 @@
 ```mermaid
 graph LR
     subgraph App[Android App]
-        User((Siswa / Guru))
-        Login[Login Screen]
+        User((Siswa / Guru / Admin))
+        Login[Layar Login]
         DashS[Dashboard Siswa]
         DashG[Dashboard Guru]
+        DashA[Dashboard Admin]
         GForm[Google Form WebView]
     end
 
     subgraph Backend[Google Cloud]
-        GAS[Google Apps Script]
+        GAS[Skrip Google Apps]
         Sheet[(Google Sheets)]
     end
 
     %% Alur Login
-    User -->|Input Login| Login
+    User -->|Input Kredensial| Login
     Login -->|POST action: login| GAS
-    GAS -->|Cek Kredensial| Sheet
-    Sheet -.->|Data User & Role| GAS
-    GAS -->|JSON Response| Login
+    GAS -->|Cek Role| Sheet
+    GAS -.->|Response: Profil & Role| Login
 
-    %% Siswa Flow
+    %% ALUR SISWA (Mengerjakan Ujian)
     Login -->|Role: Siswa| DashS
-    DashS -->|GET action: get_exams| GAS
-    GAS -->|Filter Kelas & Status| Sheet
-    GAS -->|Daftar Ujian| DashS
+    DashS -->|Request Ujian| GAS
+    GAS -->|Filter Kelas| Sheet
+    GAS -.->|Daftar Ujian| DashS
+    DashS -->|Klik Mulai| GAS
+    GAS -->|Catat Sesi Mulai| Sheet
+    DashS -->|Buka| GForm
+    GForm -->|Submit Jawaban| GAS
+    GAS -->|Fungsi onFormSubmit| Sheet
     
-    DashS -->|Klik Mulai| GAS_B[POST action: begin_exam]
-    GAS_B -->|Catat Sesi Mulai| Sheet
-    
-    DashS -->|Buka Link| GForm
-    GForm -->|Submit Jawaban| Trigger[Trigger: onFormSubmit]
-    Trigger -->|Otomatis| GAS_S[Fungsi onFormSubmit]
-    GAS_S -->|Hitung & Cari Nama| Sheet
-    GAS_S -->|Simpan ke Sheet Results| Sheet
-    
-    GForm -->|Selesai| GAS_E[POST action: end_exam_session]
-    GAS_E -->|Update Status: Completed| Sheet
+    %% ALUR GURU (Monitoring Hasil)
+    Login -->|Role: Guru| DashG
+    DashG -->|GET action: get_all_results| GAS
+    GAS -->|Ambil Data Skor| Sheet
+    GAS -.->|List Nilai Siswa| DashG
 
-    %% Guru Flow
-    Login -->|Role: Guru/Admin| DashG
-    DashG -->|GET action: getAllResults| GAS
-    GAS -->|Ambil Data Nilai| Sheet
-    GAS -->|Daftar Nilai Siswa| DashG```
+    %% ALUR ADMIN (Manajemen Sistem)
+    Login -->|Role: Admin| DashA
+    DashA -->|action: get_all_exams| GAS
+    DashA -->|action: get_all_users| GAS
+    DashA -->|action: create_exam| GAS
+    GAS <-->|CRUD Data Master| Sheet
+    GAS -.->|Data Exams/Users| DashA
+
+    %% Hubungan Sesi
+    GForm -->|Selesai| GAS
+    GAS -->|Update Status: Completed| Sheet```
