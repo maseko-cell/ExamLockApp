@@ -1,5 +1,5 @@
 ```mermaid
-graph TD
+graph LR
     subgraph App[Android App]
         User((Siswa / Guru))
         Login[Login Screen]
